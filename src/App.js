@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
 import ReactDOM from 'react-dom'
 
@@ -17,27 +16,56 @@ class App extends Component {
     };
   }
 
+  sendData = (payload) => {
+  	fetch('https://imageclasser.appspot.com/api/v1/image', {
+  		method: 'PUT',
+  		headers: {
+  			'Content-Type': 'application/json'
+  		},
+  		body: JSON.stringify(payload)
+  	}).then(res => {
+      res.text().then(res => {
+        console.log(payload, res)
+      })
+    })
+  }
+
   handleClick = (e) => {
-    let rect = ReactDOM.findDOMNode(this.refs['image']).getBoundingClientRect()
-
-    //Do API things here
-    console.log(e.clientX - Math.floor(rect.left))
-    console.log(e.clientY - Math.floor(rect.top))
-
     //Append on used numbers
     let arr = this.state.numbersUsed
     arr.push(this.state.currentNumber)
 
     //Find new random number
+    let unique = false
+    let number = 0
     for(let i = 0; i < 100; i++){
-      let number = this.getRandomInt(this.state.minNumber, this.state.maxNumber)
-
+      number = this.getRandomInt(this.state.minNumber, this.state.maxNumber)
+      unique = true
+      arr.map((obj,i) => {
+        if(number === obj)
+          unique = false
+      })
+      if(unique === true){
+        break
+      }
     }
 
     this.setState({
-      numbersUsed: arr
+      numbersUsed: arr,
+      currentNumber: number
     })
-    console.log(this.state)
+
+    //Do API things here
+    let rect = ReactDOM.findDOMNode(this.refs['image']).getBoundingClientRect()
+    let name = 'image_' + this.state.currentNumber + '.png'
+    let payload = {
+      name: name,
+      data: {
+        x: e.clientX - Math.floor(rect.left),
+        y: e.clientY - Math.floor(rect.top)
+      }
+    }
+    this.sendData(payload)
   }
 
   getRandomInt = (min, max) => {
@@ -53,8 +81,7 @@ class App extends Component {
     return (
       <div className="App">
         <div className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h2>Welcome to React</h2>
+          <h2>Click Where You Think The Camera Should Center</h2>
         </div>
         <img ref="image" alt="me" src={'./images/image_' + this.state.currentNumber + '.png'} onClick={(e) => this.handleClick(e)} />
       </div>
